@@ -19,7 +19,7 @@ public:
 	bool list = 0;
 	int broj = 0; //namestiti brojeve nakon splita
 
-	pair<cvorS*, cvorK*> search(long long int key, cvorS* root) {
+	pair<cvorS*, cvorK*> search(long long int key, cvorS* root) { //vraca pokazivac na cvor sa kljucem, ako je neuspesno vraca prethodnika cvora
 		while (root->list == 0) {
 			cvorK* kljucP = root->kljucPrvi;
 			root = root->prvi;
@@ -33,12 +33,13 @@ public:
 			prethodni = kljucP;
 			kljucP = kljucP->next;
 		}
+		if (prethodni->next->kljuc == key) prethodni = prethodni->next;
 		return { root, prethodni };
 	}
 
 	void insert(cvorK* noviKljuc, cvorS** root) {
 		pair<cvorS*, cvorK*> temp = search(noviKljuc->kljuc, *root);
-		cvorS* cvorStabla = temp.first, * trenutniS = nullptr, * noviSt = nullptr;
+		cvorS* cvorStabla = temp.first, * trenutniS = nullptr, * noviS = nullptr;
 		cvorK* trenutniK = temp.second;
 		while (1) {
 			cvorStabla->broj++;
@@ -59,7 +60,7 @@ public:
 					pokS = pokS->otac;
 				}
 				cvorStabla->kljucPoslednji = noviKljuc;
-				cvorStabla->poslednji = noviSt;
+				cvorStabla->poslednji = noviS;
 			}
 			if (trenutniK) {
 				noviKljuc->next = trenutniK->next;
@@ -80,14 +81,15 @@ public:
 			}
 			if (!cvorStabla->list) srednjiS = srednjiS->sledeci;
 			else srednjiK = srednjiK->next;
-			cvorS* noviS = new cvorS(*cvorStabla);
-			noviS->kljucPrvi = srednjiK->next;
+			noviS = new cvorS(*cvorStabla);
+			if (cvorStabla->list) noviS->kljucPrvi = srednjiK->next;
+			else noviS->kljucPrvi = srednjiK->next->next;
 			if(!noviS->list) noviS->prvi = srednjiS->sledeci;
 			cvorStabla->sledeci = noviS;
 			cvorStabla->kljucPoslednji = srednjiK;
 			cvorStabla->poslednji = srednjiS;
 			cvorStabla->broj = m / 2 + cvorStabla->list;
-			noviS->broj = m - cvorStabla->broj;
+			noviS->broj = (m - 1) / 2;
 			if (cvorStabla->list) {
 				noviKljuc = new cvorK(*srednjiK);
 			}
@@ -95,6 +97,17 @@ public:
 				noviKljuc = srednjiK->next;
 				srednjiS->sledeci = nullptr;
 			}
+
+			cvorS* pokS;
+
+			if (!noviS->list) {
+				pokS = noviS->prvi; //azuriranje oceva podstabala novog cvora
+				while (pokS != noviS->poslednji->sledeci) {
+					pokS->otac = noviS;
+					pokS = pokS->sledeci;
+				} 
+			}
+
 			srednjiK->next = nullptr;
 			if (!cvorStabla->otac) {
 				cvorStabla->otac = new cvorS;
@@ -106,7 +119,7 @@ public:
 			trenutniK = nullptr;
 			trenutniS = cvorStabla->prvi;
 			cvorK* pokK = cvorStabla->kljucPrvi;
-			cvorS* pokS = cvorStabla->prvi;
+			pokS = cvorStabla->prvi;
 			while (pokK && pokK->kljuc < noviKljuc->kljuc) {
 				trenutniK = pokK;
 				pokK = pokK->next;
@@ -114,6 +127,12 @@ public:
 				pokS = pokS->sledeci;
 			}
 		}
+	}
+
+	void remove(long long int kljuc, cvorS** root) {
+		pair<cvorS*, cvorK*> temp = search(kljuc, *root);
+		cvorS* cvorStabla = temp.first, * trenutniS = nullptr, * noviS = nullptr;
+		cvorK* trenutniK = temp.second;
 	}
 
 	void print(int lvl) {
@@ -124,21 +143,24 @@ public:
 			cout << temp->kljuc << " ";
 			temp = temp->next;
 		}
-		cout << endl;
+		//cout << endl;
+		cout << " | " << kljucPrvi->kljuc << " " << kljucPoslednji->kljuc;
+		if (!list) cout << " | " << prvi->kljucPrvi->kljuc << " " << poslednji->kljucPrvi->kljuc;
+		cout<< endl;
 	}
 
 	void preorder(int lvl) {
 		print(lvl);
 		cvorS* temp = prvi;
 		while (temp) {
-			temp->print(lvl + 1);
+			temp->preorder(lvl + 1);
 			temp = temp->sledeci;
 		}
 	}
 };
 
 int main() {
-	m = 4;
+	m = 5;
 	cvorS* root = new cvorS;
 	cvorK* temp = new cvorK;
 	temp->kljuc = 3;
@@ -146,49 +168,13 @@ int main() {
 	root->list = 1;
 	root->broj = 1;
 
-	temp = new cvorK;
-	temp->kljuc = 4;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 5;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 2;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 6;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 1;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 11;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 0;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 10;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 12;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 8;
-	root->insert(temp, &root);
-	root->preorder(0);
-	temp = new cvorK;
-	temp->kljuc = 9;
-	root->insert(temp, &root);
-	root->preorder(0);
+	int broj = 3;
+	while (broj != -1) {
+		cin >> broj;
+		temp = new cvorK;
+		temp->kljuc = broj;
+		root->insert(temp, &root);
+		root->preorder(0);
+	}
 	return 0;
 }
